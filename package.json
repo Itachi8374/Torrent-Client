@@ -1,0 +1,19 @@
+{
+  "name": "networking",
+  "version": "1.0.0",
+  "description": "Building Torrent Client",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/Itachi8374/Torrent-Client.git"
+  },
+  "author": "Tanay",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Itachi8374/Torrent-Client/issues"
+  },
+  "homepage": "https://github.com/Itachi8374/Torrent-Client#readme"
+}
