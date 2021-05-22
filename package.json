@@ -15,5 +15,8 @@
   "bugs": {
     "url": "https://github.com/Itachi8374/Torrent-Client/issues"
   },
-  "homepage": "https://github.com/Itachi8374/Torrent-Client#readme"
+  "homepage": "https://github.com/Itachi8374/Torrent-Client#readme",
+  "dependencies": {
+    "bencode": "^2.0.1"
+  }
 }
