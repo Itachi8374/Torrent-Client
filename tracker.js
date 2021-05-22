@@ -32,8 +32,14 @@ function handleUDPSend(socket, message, rawURL, callback = () => {}) {
   socket.send(message, url.port, url.host, callback);
 }
 
-function responseType() {
-  // ...
+function responseType(resp) {
+  const action = resp.readUInt32BE(0);
+  if (action === 0) {
+    return "connect";
+  }
+  if (action === 1) {
+    return "announce";
+  }
 }
 
 function buildConnectRequest() {
