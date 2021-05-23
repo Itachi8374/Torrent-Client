@@ -6,20 +6,18 @@ const torrentParser = require("./torrent-parser");
 
 module.exports.getPeers = (torrent, callback) => {
   const socket = dgram.createSocket("udp4");
-  const url = torrent["announce-list"][1].toString("utf8");
-  console.log("announce", torrent.announce.toString("utf8"));
+  const url = torrent["announce-list"][2].toString("utf8");
 
   //1. Send Connection Request
   handleUDPSend(socket, buildConnectRequest(), url);
   console.log("connection req sent");
   socket.on("message", (resp) => {
-    console.log("helloo", resp);
     if (responseType(resp) == "connect") {
       //2. Receive and Parse connection response
       const connResp = parseConnectResponse(resp);
       console.log("received and parsed connection response");
       //3. Send Announce Request
-      const announceReq = buildAnnounceRequest(connResp.connectionId, torrent);
+      const announceReq = buildAnnounceRequest(connResp.connection_id, torrent);
       handleUDPSend(socket, announceReq, url);
     } else if (responseType(resp) == "announce") {
       //4. Parse Announce resp
@@ -78,6 +76,7 @@ function buildAnnounceRequest(connId, torrent, port = 6881) {
   //transaction id
   crypto.randomBytes(4).copy(buf, 12);
   //info hash
+  console.log(torrentParser);
   torrentParser.infoHash(torrent).copy(buf, 16);
   //peer id
   util.genId().copy(buf, 36);
@@ -116,10 +115,10 @@ function parseAnnounceResponse(resp) {
     interval: resp.readUInt32BE(8),
     leechers: resp.readUInt32BE(12),
     seeders: resp.readUInt32BE(16),
-    peers: groups(resp.slice(20), 6).map((address) => {
+    peers: group(resp.slice(20), 6).map((address) => {
       return {
         ip: address.slice(0, 4).join("."),
-        port: address.readUInt32BE(4),
+        port: address.readUInt16BE(4),
       };
     }),
   };

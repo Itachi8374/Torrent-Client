@@ -19,4 +19,5 @@ module.exports.size = (torrent) => {
 module.exports.infoHash = (torrent) => {
   const info = bencode.encode(torrent.info);
   const hash = crypto.createHash("sha1").update(info).digest();
+  return hash;
 };
