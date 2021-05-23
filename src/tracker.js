@@ -10,7 +10,7 @@ module.exports.getPeers = (torrent, callback) => {
 
   //1. Send Connection Request
   handleUDPSend(socket, buildConnectRequest(), url);
-  console.log("connection req sent");
+  console.log("connection req sent...");
   socket.on("message", (resp) => {
     if (responseType(resp) == "connect") {
       //2. Receive and Parse connection response
@@ -30,8 +30,7 @@ module.exports.getPeers = (torrent, callback) => {
 
 function handleUDPSend(socket, message, rawURL, callback = () => {}) {
   const url = new URL(rawURL);
-  console.log(url.hostname);
-  console.log(message);
+
   socket.send(message, 0, message.length, url.port, url.hostname, callback);
 }
 
@@ -76,7 +75,6 @@ function buildAnnounceRequest(connId, torrent, port = 6881) {
   //transaction id
   crypto.randomBytes(4).copy(buf, 12);
   //info hash
-  console.log(torrentParser);
   torrentParser.infoHash(torrent).copy(buf, 16);
   //peer id
   util.genId().copy(buf, 36);
