@@ -2,15 +2,16 @@ const net = require("net");
 const Buffer = require("buffer").Buffer;
 const tracker = require("./tracker");
 const message = require("./message");
+const Pieces = require("./pieces");
 
 module.exports = (torrent) => {
-  const requested = [];
   tracker.getPeers(torrent, (peers) => {
-    peers.forEach((peer) => download(peer, torrent, requested));
+    const pieces = new Pieces(torrent.info.pieces.length / 20);
+    peers.forEach((peer) => download(peer, torrent, pieces));
   });
 };
 
-function download(peer, torrent, requested) {
+function download(peer, torrent, pieces) {
   const socket = net.Socket();
   socket.on("error", console.log);
   socket.connect(peer.port, peer.ip, () => {
@@ -18,18 +19,18 @@ function download(peer, torrent, requested) {
     socket.write(message.buildHandshake(torrent));
   });
   //2.
-  const queue = [];
-  onWholeMsg(socket, (msg) => msgHandler(msg, socket, requested, queue));
+  const queue = { choked: true, queue: [] };
+  onWholeMsg(socket, (msg) => msgHandler(msg, socket, pieces, queue));
 }
 
-function msgHandler(msg, socket, requested, queue) {
+function msgHandler(msg, socket, pieces, queue) {
   if (isHandshake(msg)) {
     socket.write(message.buildInterested());
   } else {
     const parsedMsg = message.parse(msg);
 
     if (parsedMsg.id === 0) chokeHandler();
-    if (parsedMsg.id === 1) unchokeHandler();
+    if (parsedMsg.id === 1) unchokeHandler(socket, pieces, queue);
     if (parsedMsg.id === 4)
       haveHandler(parsedMsg.payload, socket, requested, queue);
     if (parsedMsg.id === 5) bitfieldHandler(parsedMsg.payload);
@@ -49,15 +50,16 @@ function chokeHandler() {
   //...
 }
 
-function unchokeHandler() {
-  //...
+function unchokeHandler(socket, pieces, queue) {
+  queue.choked = false;
+  requestPiece(socket, pieces, queue);
 }
 
 function haveHandler(payload, socket, requested, queue) {
   const pieceIndex = payload.readInt32BE(0);
   queue.push(pieceIndex);
-  if(queue.length === 1){
-      requestPiece(socket, requested, queue);
+  if (queue.length === 1) {
+    requestPiece(socket, requested, queue);
   }
 }
 
@@ -69,13 +71,17 @@ function pieceHandler(payload) {
   //...
 }
 
-function requestPiece(socket, requested, queue){
-    if(requested[queue[0]]){
-        queue.shift();
-    } else {
-        // this is pseudo-code, as buildRequest takes slightly more complex arguments
-        socket.write(message.buildRequest(pieceIndex));
+function requestPiece(socket, requested, queue) {
+  if (queue.choked) return null;
+
+  while (queue.queue.length) {
+    const pieceIndex = queue.shift();
+    if (pieces.needed(pieceIndex)) {
+      socket.write(message.buildRequest(pieceIndex));
+      pieces.addRequested(pieceIndex);
+      break;g
     }
+  }
 }
 
 function onWholeMsg(socket, callback) {
