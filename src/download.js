@@ -4,12 +4,13 @@ const tracker = require("./tracker");
 const message = require("./message");
 
 module.exports = (torrent) => {
+  const requested = [];
   tracker.getPeers(torrent, (peers) => {
-    peers.forEach(download);
+    peers.forEach((peer) => download(peer, torrent, requested));
   });
 };
 
-function download(peer) {
+function download(peer, torrent, requested) {
   const socket = net.Socket();
   socket.on("error", console.log);
   socket.connect(peer.port, peer.ip, () => {
@@ -17,10 +18,11 @@ function download(peer) {
     socket.write(message.buildHandshake(torrent));
   });
   //2.
-  onWholeMsg(socket, (msg) => msgHandler(msg, socket));
+  const queue = [];
+  onWholeMsg(socket, (msg) => msgHandler(msg, socket, requested, queue));
 }
 
-function msgHandler(msg, socket) {
+function msgHandler(msg, socket, requested, queue) {
   if (isHandshake(msg)) {
     socket.write(message.buildInterested());
   } else {
@@ -28,9 +30,11 @@ function msgHandler(msg, socket) {
 
     if (parsedMsg.id === 0) chokeHandler();
     if (parsedMsg.id === 1) unchokeHandler();
-    if (parsedMsg.id === 4) haveHandler(parsedMsg.payload);
+    if (parsedMsg.id === 4)
+      haveHandler(parsedMsg.payload, socket, requested, queue);
     if (parsedMsg.id === 5) bitfieldHandler(parsedMsg.payload);
-    if (parsedMsg.id === 7) pieceHandler(parsedMsg.payload);
+    if (parsedMsg.id === 7)
+      pieceHandler(parsedMsg.payload, socket, requested, queue);
   }
 }
 
@@ -41,17 +45,38 @@ function isHandshake(msg) {
   );
 }
 
-function chokeHandler() { //... }
+function chokeHandler() {
+  //...
+}
 
-function unchokeHandler() { //... }
+function unchokeHandler() {
+  //...
+}
 
-function haveHandler(payload) { //... }
+function haveHandler(payload, socket, requested, queue) {
+  const pieceIndex = payload.readInt32BE(0);
+  queue.push(pieceIndex);
+  if(queue.length === 1){
+      requestPiece(socket, requested, queue);
+  }
+}
 
-function bitfieldHandler(payload) { //... }
+function bitfieldHandler(payload) {
+  //...
+}
 
-function pieceHandler(payload) { //... }
+function pieceHandler(payload) {
+  //...
+}
 
-
+function requestPiece(socket, requested, queue){
+    if(requested[queue[0]]){
+        queue.shift();
+    } else {
+        // this is pseudo-code, as buildRequest takes slightly more complex arguments
+        socket.write(message.buildRequest(pieceIndex));
+    }
+}
 
 function onWholeMsg(socket, callback) {
   let savedBuf = Buffer.alloc(0);
