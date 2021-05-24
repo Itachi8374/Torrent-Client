@@ -23,6 +23,14 @@ function download(peer) {
 function msgHandler(msg, socket) {
   if (isHandshake(msg)) {
     socket.write(message.buildInterested());
+  } else {
+    const parsedMsg = message.parse(msg);
+
+    if (parsedMsg.id === 0) chokeHandler();
+    if (parsedMsg.id === 1) unchokeHandler();
+    if (parsedMsg.id === 4) haveHandler(parsedMsg.payload);
+    if (parsedMsg.id === 5) bitfieldHandler(parsedMsg.payload);
+    if (parsedMsg.id === 7) pieceHandler(parsedMsg.payload);
   }
 }
 
@@ -32,6 +40,18 @@ function isHandshake(msg) {
     msg.toString("utf8", 1) === "BitTorrent protocol"
   );
 }
+
+function chokeHandler() { //... }
+
+function unchokeHandler() { //... }
+
+function haveHandler(payload) { //... }
+
+function bitfieldHandler(payload) { //... }
+
+function pieceHandler(payload) { //... }
+
+
 
 function onWholeMsg(socket, callback) {
   let savedBuf = Buffer.alloc(0);
