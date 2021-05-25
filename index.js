@@ -1,7 +1,10 @@
-const tracker = require("./src/tracker");
-const torrentParser = require("./src/torrent-parser");
 const download = require("./src/download");
+const torrentParser = require("./src/torrent-parser");
 
 const torrent = torrentParser.open(process.argv[2]);
 
-download(torrent);
+module.exports.run = () => {
+  download(torrent, torrent.info.name);
+};
+
+this.run();
