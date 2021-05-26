@@ -17,14 +17,14 @@ module.exports = (torrent, path) => {
 function download(peer, torrent, pieces, file) {
   const socket = new net.Socket();
   socket.on("error", (err) => {
-    console.log("This is error: ", err.code);
     if (err.code === "ECONNRESET") {
-      console.log(run);
+      console.log(`Peer: ${peer.ip} \n Error: ${err.code}`);
       run.run();
     }
   });
   socket.connect(peer.port, peer.ip, () => {
     socket.write(message.buildHandshake(torrent));
+    console.log(`Handshake request with ${peer.ip}`);
   });
   const queue = new Queue(torrent);
   onWholeMsg(socket, (msg) =>
@@ -110,8 +110,6 @@ function bitfieldHandler(socket, pieces, queue, payload) {
 }
 
 function pieceHandler(socket, pieces, queue, torrent, file, pieceResp) {
-  pieces.printPercentDone();
-
   pieces.addReceived(pieceResp);
 
   const offset =

@@ -6,7 +6,7 @@ const torrentParser = require("./torrent-parser");
 
 module.exports.getPeers = (torrent, callback) => {
   const socket = dgram.createSocket("udp4");
-  const url = torrent["announce-list"][2].toString("utf8");
+  const url = torrent["announce-list"][5].toString("utf8");
 
   //1. Send Connection Request
   handleUDPSend(socket, buildConnectRequest(), url);
@@ -30,7 +30,6 @@ module.exports.getPeers = (torrent, callback) => {
 
 function handleUDPSend(socket, message, rawURL, callback = () => {}) {
   const url = new URL(rawURL);
-
   socket.send(message, 0, message.length, url.port, url.hostname, callback);
 }
 
